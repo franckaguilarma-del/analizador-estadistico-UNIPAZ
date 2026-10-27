@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analizador de paros · Servicios Petroleros Río Grande</title>
+<style>
+:root{--bg:#f3f5f8;--card:#fff;--tx:#14212e;--mut:#5b6877;--pri:#0b2a4a;--acc:#e8a317;--bd:#d6dce4;--bad:#b3261e;--ok:#1b7a3d}
+@media(prefers-color-scheme:dark){:root{--bg:#10151b;--card:#1a222b;--tx:#e8edf2;--mut:#9aa8b6;--pri:#1f5a99;--acc:#f2b632;--bd:#33404d;--bad:#ff8a80;--ok:#6fd08c}}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--tx);line-height:1.45}
+header{background:var(--pri);color:#fff;padding:14px 18px;border-bottom:4px solid var(--acc)}
+header h1{margin:0;font-size:1.2rem}header small{opacity:.85}
+nav{display:flex;gap:6px;padding:10px 14px 0;max-width:1000px;margin:auto;overflow-x:auto}
+nav button{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-bottom:0;border-radius:8px 8px 0 0;padding:9px 14px;font:inherit;cursor:pointer;white-space:nowrap}
+nav button.on{background:var(--acc);color:#14212e;font-weight:700}
+main{max-width:1000px;margin:auto;padding:0 14px 20px}
+.tab{display:none;background:var(--card);border:1px solid var(--bd);border-radius:0 10px 10px 10px;padding:14px}
+.tab.on{display:block}
+h2{margin:0 0 10px;font-size:1.05rem;color:var(--acc)}h3{margin:14px 0 6px;font-size:.95rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+label{font-size:.8rem;color:var(--mut);display:block}
+input,select,textarea{width:100%;padding:7px;border:1px solid var(--bd);border-radius:6px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:120px}
+button.b{background:var(--pri);color:#fff;border:0;border-radius:6px;padding:8px 14px;font:inherit;cursor:pointer;margin:8px 6px 0 0}
+button.s{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}th,td{border:1px solid var(--bd);padding:4px 8px;text-align:center}th{background:var(--bg)}
+.wrap{overflow-x:auto;max-height:320px;overflow-y:auto}.wrap.full{max-height:none}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.card{border:1px solid var(--bd);border-left:4px solid var(--acc);border-radius:8px;padding:10px}
+.card span{font-size:.78rem;color:var(--mut)}.card b{display:block;font-size:1.3rem}.card p{margin:4px 0 0;font-size:.82rem;color:var(--mut)}
+svg{width:100%;height:auto}svg text{fill:var(--tx);font-size:11px}
+.warn{border:1px solid var(--bad);color:var(--bad);border-radius:8px;padding:8px 10px;margin:8px 0;font-weight:600}
+.ej{background:var(--acc);color:#14212e;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:.9rem}
+#msg{color:var(--bad);font-size:.9rem;margin-top:6px}
+li{margin-bottom:5px}
+.cap{font-size:.85rem;color:var(--mut);margin:0 0 6px}
+.chart{border:1px solid var(--bd);border-radius:10px;padding:10px;margin-bottom:12px}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.two>div{border:1px solid var(--bd);border-radius:10px;padding:10px 12px}
+.two h4{margin:0 0 6px}.f h4{color:var(--ok)}.d h4{color:var(--bad)}
+.two ul{margin:0;padding-left:18px}
+table.alt td{text-align:left;vertical-align:top;font-size:.85rem;min-width:110px}
+.pill{display:inline-block;border-radius:12px;padding:2px 10px;font-weight:700;font-size:.8rem;color:#fff}
+.Alta{background:#b3261e}.Media{background:#c77700}.Baja{background:#1b7a3d}
+.sl{margin:10px 0}.sl b{color:var(--acc)}input[type=range]{padding:0}
+.tt{font-weight:700;font-size:13px}
+svg .pt,svg .hb{cursor:pointer}svg .pt:hover,svg .hb:hover{opacity:.7}
+tr.bad td{color:var(--bad);font-weight:600}
+.x{background:none;border:0;color:var(--bad);cursor:pointer;font-size:1rem;padding:0 8px}
+.det{background:var(--bg);border:1px dashed var(--acc);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:.88rem}
+.portada{text-align:center;padding:50px 10px 40px;border-bottom:4px solid var(--acc);margin-bottom:16px}
+.portada h1{margin:10px 0}.rep h3{border-bottom:2px solid var(--acc);padding-bottom:3px;margin-top:22px}
+.rep .ch{margin:8px 0}
+@media(max-width:600px){input,select,textarea{font-size:16px}svg text{font-size:17px}svg .tt{font-size:19px}header h1{font-size:1.02rem}.tab{padding:10px}main{padding:0 8px 16px}table.alt td{min-width:130px}}
+@media print{:root{--bg:#fff;--card:#fff;--tx:#000;--mut:#444;--bd:#bbb;--bad:#b3261e;--ok:#1b7a3d}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body.solo .tab{break-inside:auto}
+body.solo .tab:not(#t-inf),body.solo header{display:none!important}
+.portada{page-break-after:always}.rep h2,.rep h3{color:#0b2a4a!important}.rep .ch{break-inside:avoid}
+nav,.noprint,.b{display:none!important}.tab{display:block!important;margin-bottom:14px;break-inside:avoid}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<header><h1 id="hEmpresa">Servicios Petroleros Río Grande S.A.S.</h1><small id="hVar">Mantenimiento correctivo de bombas centrífugas · UNIPAZ · Estadística (840601)</small></header>
+<nav>
+<button class="on" data-t="datos">Datos</button><button data-t="est">Estadística</button><button data-t="graf">Gráficos</button><button data-t="rec">Recomendaciones</button><button data-t="inf">Informe</button>
+</nav>
+<main>
+
+<div class="tab on" id="t-datos">
+<h2>Datos de la empresa y del proceso</h2>
+<div id="banner"></div>
+<div class="grid">
+<div><label>Empresa</label><input id="empresa" value="Servicios Petroleros Río Grande S.A.S."></div>
+<div><label>Variable</label><input id="variable" value="Duración del paro por falla de bomba"></div>
+<div><label>Unidad</label><input id="unidad" value="min"></div>
+<div><label>¿Qué es mejor?</label><select id="mejor"><option>Menor valor</option><option>Mayor valor</option></select></div>
+<div><label>Límite de especificación (máximo aceptable)</label><input id="limite" type="number" step="any" value="90"></div>
+<div><label>Meta de la empresa</label><input id="meta" type="number" step="any" value="60"></div>
+<div><label>Costo por hora de paro (opcional)</label><input id="costo" type="number" step="any" value=""></div>
+</div>
+<label style="margin-top:10px">Datos: uno por línea, en el orden en que se tomaron. Pega o carga el CSV.</label>
+<textarea id="datos"></textarea>
+<input type="file" id="archivo" accept=".csv,.txt" style="display:none">
+<button class="b" onclick="document.getElementById('archivo').click()">Cargar archivo…</button>
+<button class="b" onclick="analizar()">Analizar y guardar</button>
+<button class="b s" onclick="document.getElementById('datos').value=CASO;analizar()">Datos del caso 02 (45 paros)</button>
+<button class="b s" onclick="ejemplo()">Datos de ejemplo (40 lotes)</button>
+<button class="b s" onclick="mostrarInforme()">Generar informe</button>
+<button class="b s" onclick="restablecer()">Restablecer caso 02</button>
+<div id="msg"></div>
+<h3>Datos cargados <span style="font-weight:400;font-size:.8rem;color:var(--mut)">(en rojo, los que pasan del límite)</span></h3>
+<div class="grid" style="align-items:end"><div><label>Agregar un paro</label><input id="nuevo" type="number" step="any" placeholder="Ej. 85" onkeydown="if(event.key==='Enter')agregar()"></div>
+<div><button class="b" onclick="agregar()" style="margin:0">Agregar</button></div>
+<div><label>Ordenar la tabla</label><select id="orden" onchange="renderDatos(DATOS)"><option value="reg">Orden de registro</option><option value="may">Mayor a menor</option><option value="men">Menor a mayor</option></select></div></div>
+<div class="wrap" id="tablaDatos" style="margin-top:8px"></div>
+</div>
+
+<div class="tab" id="t-est">
+<h2>Estadística</h2>
+<div class="cards" id="cards"></div>
+<h3>Tabla de distribución de frecuencias</h3>
+<div class="wrap full" id="tabla"></div><p id="clases" style="font-size:.85rem;color:var(--mut)"></p>
+</div>
+
+<div class="tab" id="t-graf">
+<h2>Gráficos</h2>
+<div class="chart"><h3>Controles en vivo</h3><p class="cap">Mueve el límite y la meta: los gráficos, las tarjetas y las recomendaciones se recalculan al instante. Pasa el cursor o toca los puntos y las barras para ver el detalle.</p>
+<div class="sl"><label>Límite de especificación: <b id="lv"></b></label><input type="range" id="rl" oninput="deslizar('limite',this.value)"></div>
+<div class="sl"><label>Meta de la empresa: <b id="mv"></b></label><input type="range" id="rm" oninput="deslizar('meta',this.value)"></div></div>
+<div class="chart"><h3>1. Paros en el orden en que se registraron</h3><p class="cap">Cada punto es un paro. Los rojos pasan del límite; las líneas punteadas son el límite y la meta.</p><div id="serie"></div><div class="det" id="detSerie"></div><button class="b s" onclick="descargar('serie','paros_en_orden')">Descargar imagen</button></div>
+<div class="chart"><h3>2. Histograma</h3><p class="cap">Cuántos paros caen en cada rango de duración. Las barras rojas están por encima del límite.</p><div id="histo"></div><div class="det" id="detHisto"></div><button class="b s" onclick="descargar('histo','histograma')">Descargar imagen</button></div>
+<div class="chart"><h3>3. Cumplimiento de meta y límite</h3><p class="cap">Participación de los paros según su duración: dentro de la meta, entre la meta y el límite, o fuera del límite.</p><div id="torta"></div><button class="b s" onclick="descargar('torta','cumplimiento')">Descargar imagen</button></div>
+<div class="chart"><h3>4. Diagrama de caja</h3><p class="cap">La caja muestra el 50 % central de los paros; la línea interna es la mediana; los puntos rojos son valores atípicos.</p><div id="caja"></div><button class="b s" onclick="descargar('caja','diagrama_de_caja')">Descargar imagen</button></div>
+<div class="chart"><h3>5. Ojiva</h3><p class="cap">Porcentaje acumulado de paros que dura hasta cierto tiempo. Sirve para leer, por ejemplo, qué porcentaje termina en menos de 90 min.</p><div id="ojiva"></div><button class="b s" onclick="descargar('ojiva','ojiva')">Descargar imagen</button></div>
+</div>
+
+<div class="tab" id="t-rec">
+<h2>Recomendaciones</h2>
+<h3>Resumen</h3><div id="informe"></div>
+<h3>Diagnóstico con números</h3><div class="two" id="diag"></div>
+<h3>Cinco alternativas de mejora</h3>
+<p class="cap">Los datos y el impacto salen de la muestra cargada. El costo es solo un nivel relativo: debe cotizarse con la empresa. Las causas de las fallas son hipótesis del sector que hay que verificar.</p>
+<div class="wrap full" id="alts"></div>
+<h3>Simulador de escenarios</h3>
+<p class="cap">Mueve los controles para ver cómo cambiarían los indicadores si los paros se acortaran. Es un escenario hipotético, no una predicción.</p>
+<div class="sl"><label>Reducir la duración de los paros que pasan del límite: <b id="v1">0 %</b></label><input type="range" id="s1" min="0" max="80" step="5" value="0" oninput="simular()"></div>
+<div class="sl"><label>Reducir la duración de todos los paros (mejora general): <b id="v2">0 %</b></label><input type="range" id="s2" min="0" max="30" step="5" value="0" oninput="simular()"></div>
+<div class="wrap full" id="sim"></div>
+<h3>Aporte del grupo</h3>
+<p class="cap">Escriban dos alternativas: qué proponen, qué dato de la app lo respalda y cómo sabrán si funcionó. Mencionen que usaron IA y qué pidieron.</p>
+<textarea id="aporte" style="min-height:170px" placeholder="Alternativa 1: ...&#10;Alternativa 2: ..."></textarea>
+<button class="b" onclick="guardar();document.getElementById('msg2').textContent='Guardado en este navegador.'">Guardar aporte</button>
+<span id="msg2" style="font-size:.85rem;color:var(--mut)"></span>
+</div>
+<div class="tab" id="t-inf">
+<div class="noprint">
+<h2>Informe</h2>
+<p class="cap">Completa estos dos campos, pulsa «Generar informe» y luego «Imprimir / guardar como PDF». En el cuadro de impresión elige «Guardar como PDF».</p>
+<div class="grid"><div><label>Autor o grupo</label><input id="autor" placeholder="Nombres de los integrantes"></div></div>
+<label style="margin-top:8px">Declaración de uso de IA (edítala para que sea fiel a lo que hicieron)</label>
+<textarea id="usoia" style="min-height:100px">Se usó una IA (Claude, de Anthropic) para construir y mejorar la aplicación. Se le pidió: crear el analizador de estadística descriptiva, adaptarlo al caso de Servicios Petroleros Río Grande, y agregar gráficos, diagnóstico, alternativas de mejora, simulador e informe. Los resultados se verificaron con Excel.</textarea>
+<button class="b" onclick="generarInforme()">Generar informe</button>
+<button class="b s" onclick="imprimirInforme()">Imprimir / guardar como PDF</button>
+</div>
+<div id="rep" class="rep"></div>
+</div>
+</main>
+
+<script>
+var CASO="125\n91\n97\n42\n107\n71\n50\n42\n59\n24\n93\n61\n51\n39\n49\n96\n30\n66\n51\n63\n114\n80\n45\n48\n90\n66\n22\n74\n84\n63\n55\n71\n94\n262\n49\n57\n28\n114\n73\n46\n101\n32\n87\n49\n119";
+var SAMPLE="26\n20\n27\n24\n26\n26\n20\n22\n27\n29\n31\n24\n34\n21\n23\n15\n29\n33\n32\n17\n30\n24\n17\n18\n21\n23\n17\n19\n29\n26\n26\n30\n34\n22\n22\n30\n38\n30\n32\n29";
+
+/* ===== Funciones de cálculo (no modificar) ===== */
+function fmt(x,d){return Number(x).toLocaleString("es-CO",{minimumFractionDigits:d,maximumFractionDigits:d})}
+function leerDatos(txt){
+  var out=[];
+  txt.split(/\r?\n/).forEach(function(l){
+    l=l.trim();if(!l)return;
+    var campos;
+    if(/[;\t]/.test(l))campos=l.split(/[;\t]/);
+    else{var pc=l.split(",");
+      /* "12,5" con una sola coma: decimal, salvo que el primer número sea el N.º de registro (1,125) */
+      if(pc.length===2&&/^-?\d+$/.test(pc[0].trim())&&/^\d+$/.test(pc[1].trim())&&parseInt(pc[0],10)!==out.length+1)campos=[l];
+      else campos=pc}
+    for(var i=campos.length-1;i>=0;i--){var c=campos[i].trim().replace(",",".");if(c!==""&&!isNaN(c)){out.push(parseFloat(c));break}}
+  });
+  return out;
+}
+function media(a){return a.reduce(function(s,x){return s+x},0)/a.length}
+function mediana(a){var s=a.slice().sort(function(x,y){return x-y}),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2}
+function moda(a){
+  var c={},mx=0;a.forEach(function(x){c[x]=(c[x]||0)+1;if(c[x]>mx)mx=c[x]});
+  var r=Object.keys(c).filter(function(k){return c[k]===mx}).map(Number).sort(function(x,y){return x-y});
+  return {valores:r,frec:mx};
+}
+function desvTipica(a){var m=media(a);return Math.sqrt(a.reduce(function(s,x){return s+(x-m)*(x-m)},0)/(a.length-1))}
+function agrupar(a){
+  var n=a.length,mn=Math.min.apply(null,a),mx=Math.max.apply(null,a),R=mx-mn;
+  var k=Math.round(1+3.322*Math.log10(n));
+  var A=Math.ceil(R/k); if(A<=0)A=1;
+  var cl=[];
+  for(var i=0;i<k;i++)cl.push({li:mn+i*A,ls:mn+(i+1)*A,marca:mn+i*A+A/2,fi:0});
+  a.forEach(function(x){var j=Math.min(k-1,Math.floor((x-mn)/A));cl[j].fi++});
+  var F=0;cl.forEach(function(c){F+=c.fi;c.Fi=F;c.fr=c.fi/n;c.Fr=F/n});
+  var mg=cl.reduce(function(s,c){return s+c.fi*c.marca},0)/n;
+  var j=0;while(cl[j].Fi<n/2)j++;
+  var prev=j?cl[j-1].Fi:0;
+  var medg=cl[j].li+A*(n/2-prev)/cl[j].fi;
+  var jm=0;cl.forEach(function(c,i){if(c.fi>cl[jm].fi)jm=i});
+  var d1=cl[jm].fi-(jm?cl[jm-1].fi:0),d2=cl[jm].fi-(jm<k-1?cl[jm+1].fi:0);
+  var modg=cl[jm].li+A*(d1/(d1+d2));
+  return {n:n,mn:mn,mx:mx,R:R,k:k,A:A,cl:cl,mg:mg,medg:medg,modg:modg};
+}
+/* AGREGADO: asimetría (igual a SESGO de Excel) */
+function asimetria(a){var n=a.length,m=media(a),sd=desvTipica(a);return n/((n-1)*(n-2))*a.reduce(function(t,x){return t+Math.pow((x-m)/sd,3)},0)}
+/* AGREGADO: cuartiles (método de Excel CUARTIL.INC) y valores atípicos */
+function cuartil(a,p){var s=a.slice().sort(function(x,y){return x-y}),pos=(s.length-1)*p,i=Math.floor(pos);return s[i]+(s[Math.min(i+1,s.length-1)]-s[i])*(pos-i)}
+function atipicos(a){var q1=cuartil(a,.25),q3=cuartil(a,.75),r=q3-q1,hi=q3+1.5*r,lo=q1-1.5*r;
+  return {q1:q1,q3:q3,hi:hi,lo:lo,val:a.filter(function(x){return x>hi||x<lo})}}
+
+/* ===== Gráficos (SVG sin librerías) ===== */
+function eje(W,H,L,B,T,mx,fmtY){var s="";for(var t=0;t<=4;t++){var v=mx*t/4,y=H-B-(H-B-T)*t/4;s+='<line x1="'+L+'" x2="'+(W-10)+'" y1="'+y+'" y2="'+y+'" stroke="#8884"/><text x="'+(L-6)+'" y="'+(y+4)+'" text-anchor="end">'+fmtY(v)+'</text>'}return s}
+function svgHisto(g,u){
+  var W=640,H=280,L=58,B=40,T=28,mx=Math.max.apply(null,g.cl.map(function(c){return c.fi}));
+  var bw=(W-L-10)/g.k,s='<svg viewBox="0 0 '+W+' '+H+'">'+eje(W,H,L,B,T,mx,function(v){return Math.round(v*10)/10});
+  g.cl.forEach(function(c,i){var h=(H-B-T)*c.fi/mx,x=L+i*bw;
+    s+='<rect x="'+x+'" y="'+(H-B-h)+'" width="'+bw+'" height="'+h+'" fill="'+(c.li>=num("limite")?"#b3261e":"#e8a317")+'" stroke="#0b2a4a" class="hb" onclick="detHisto('+i+')"><title>Clase '+c.li+' a '+c.ls+': '+c.fi+' paros (clic para ver cuáles)</title></rect><text x="'+(x+bw/2)+'" y="'+(H-B-h-4)+'" text-anchor="middle">'+c.fi+'</text><text x="'+x+'" y="'+(H-B+14)+'" text-anchor="middle">'+c.li+'</text>'});
+  s+='<text x="'+(L+g.k*bw)+'" y="'+(H-B+14)+'" text-anchor="middle">'+g.cl[g.k-1].ls+'</text><text x="'+(W/2)+'" y="'+(H-6)+'" text-anchor="middle">Duración del paro ('+u+')</text>'+tit("Distribución de la duración de los paros",W)+ylab("Número de paros",H);
+  return s+'</svg>';
+}
+function svgOjiva(g){
+  var W=640,H=280,L=58,B=40,T=28,x0=g.cl[0].li,x1=g.cl[g.k-1].ls;
+  function X(v){return L+(W-L-15)*(v-x0)/(x1-x0)}function Y(p){return H-B-(H-B-T)*p}
+  var s='<svg viewBox="0 0 '+W+' '+H+'">'+eje(W,H,L,B,T,100,function(v){return Math.round(v)+"%"});
+  var pts=[[x0,0]];g.cl.forEach(function(c){pts.push([c.ls,c.Fr])});
+  s+='<polyline fill="none" stroke="#0b5ea8" stroke-width="2.5" points="'+pts.map(function(p){return X(p[0])+','+Y(p[1])}).join(' ')+'"/>';
+  pts.forEach(function(p){s+='<circle cx="'+X(p[0])+'" cy="'+Y(p[1])+'" r="4" fill="#0b5ea8"><title>Hasta '+p[0]+': '+fmt(p[1]*100,1)+' % de los paros</title></circle><text x="'+X(p[0])+'" y="'+(H-B+14)+'" text-anchor="middle">'+p[0]+'</text>'});
+  return s+'<text x="'+(W/2)+'" y="'+(H-6)+'" text-anchor="middle">Duración del paro ('+document.getElementById("unidad").value+')</text>'+tit("Ojiva: porcentaje acumulado de paros",W)+ylab("Frecuencia acumulada (%)",H)+'</svg>';
+}
+function svgSerie(a,lim,meta,u){
+  var W=640,H=280,L=58,B=30,T=28,mx=Math.max.apply(null,a.concat(isNaN(lim)?[0]:[lim]))*1.1;
+  function X(i){return L+(W-L-15)*(a.length>1?i/(a.length-1):0)}function Y(v){return H-B-(H-B-T)*v/mx}
+  var s='<svg viewBox="0 0 '+W+' '+H+'">'+eje(W,H,L,B,T,mx,function(v){return Math.round(v)});
+  if(!isNaN(lim))s+='<line x1="'+L+'" x2="'+(W-15)+'" y1="'+Y(lim)+'" y2="'+Y(lim)+'" stroke="#b3261e" stroke-dasharray="6 4" stroke-width="2"/><text x="'+(W-15)+'" y="'+(Y(lim)-4)+'" text-anchor="end" style="fill:#b3261e">Límite '+lim+'</text>';
+  if(!isNaN(meta))s+='<line x1="'+L+'" x2="'+(W-15)+'" y1="'+Y(meta)+'" y2="'+Y(meta)+'" stroke="#1b7a3d" stroke-dasharray="6 4" stroke-width="2"/><text x="'+(W-15)+'" y="'+(Y(meta)-4)+'" text-anchor="end" style="fill:#1b7a3d">Meta '+meta+'</text>';
+  s+='<polyline fill="none" stroke="#e8a317" stroke-width="2" points="'+a.map(function(v,i){return X(i)+','+Y(v)}).join(' ')+'"/>';
+  a.forEach(function(v,i){var mal=!isNaN(lim)&&v>lim;s+='<circle class="pt" onclick="detSerie('+i+')" cx="'+X(i)+'" cy="'+Y(v)+'" r="4.5" fill="'+(mal?"#b3261e":"#e8a317")+'"><title>Paro '+(i+1)+': '+v+' '+u+'</title></circle>'});
+  return s+'<text x="'+(W/2)+'" y="'+(H-6)+'" text-anchor="middle">Número de paro (orden de registro)</text>'+tit("Duración de cada paro en el orden registrado",W)+ylab("Duración ("+u+")",H)+'</svg>';
+}
+
+/* ===== Estadística (tarjetas) y recomendaciones ===== */
+function num(id){return parseFloat(document.getElementById(id).value)}
+function tarjetas(a,g,m,at){
+  var u=document.getElementById("unidad").value,lim=num("limite"),meta=num("meta"),costo=num("costo"),menor=document.getElementById("mejor").value==="Menor valor";
+  var mo=moda(a),c=[];
+  c.push(["Media",fmt(m.media,3)+" "+u,"Es el promedio de duración de los paros."]);
+  c.push(["Mediana",fmt(m.mediana,3)+" "+u,"La mitad de los paros dura menos que esto y la otra mitad más."]);
+  c.push(["Moda",mo.frec<2?"Sin moda":mo.valores.slice(0,3).join(", ")+" "+u,"Es la duración que más se repite."]);
+  c.push(["Desviación típica",fmt(m.sd,3)+" "+u,"Qué tanto se alejan los paros del promedio."]);
+  c.push(["Coef. de variación",fmt(m.cv,2)+" %",m.cv>20?"Alto: los paros son muy desiguales y el proceso es poco estable.":m.cv>10?"Moderado: hay variación, pero controlable.":"Bajo: los paros son parejos."]);
+  var as=asimetria(a);c.push(["Asimetría",fmt(as,3),as>0.5?"Positiva: hay unos pocos valores muy altos que estiran la cola hacia la derecha.":as<-0.5?"Negativa: hay unos pocos valores muy bajos.":"Casi simétrica."]);
+  c.push(["Mínimo / Máximo",g.mn+" / "+g.mx+" "+u,"El paro más corto y el más largo registrados."]);
+  if(!isNaN(lim)){var f=a.filter(function(x){return menor?x>lim:x<lim}).length;
+    c.push(["Fuera del límite ("+lim+")",f+" de "+g.n+" ("+fmt(f/g.n*100,1)+" %)","Paros que "+(menor?"superan":"quedan por debajo de")+" lo máximo aceptable."]);
+    if(menor){var ex=a.reduce(function(s,x){return s+Math.max(0,x-lim)},0);
+      c.push(["Minutos excedidos",fmt(ex,0)+" "+u,"Suma de los minutos que se pasaron del límite."+(costo>0?" Costo estimado: "+fmt(ex/60*costo,0)+".":"")])}}
+  if(!isNaN(meta)){var k=a.filter(function(x){return menor?x<=meta:x>=meta}).length;
+    c.push(["Cumplen la meta ("+meta+")",k+" de "+g.n+" ("+fmt(k/g.n*100,1)+" %)","Paros que alcanzan lo que la empresa quiere lograr."])}
+  c.push(["Valores atípicos",at.val.length+(at.val.length?": "+at.val.join(", "):""),"Paros muy por fuera de lo normal (regla 1,5 × rango intercuartílico: fuera de "+fmt(at.lo,1)+" a "+fmt(at.hi,1)+")."]);
+  c.push(["Media agrupada",fmt(g.mg,1)+" "+u,"Media calculada con la tabla de frecuencias."]);
+  c.push(["Mediana agrupada",fmt(g.medg,1)+" "+u,"Mediana calculada con la tabla de frecuencias."]);
+  c.push(["Moda agrupada",fmt(g.modg,1)+" "+u,"Moda calculada con la tabla de frecuencias."]);
+  return c.map(function(x){return '<div class="card"><span>'+x[0]+'</span><b>'+x[1]+'</b><p>'+x[2]+'</p></div>'}).join("");
+}
+function construirInforme(a,g,m,at){
+  var u=document.getElementById("unidad").value,lim=num("limite"),meta=num("meta"),menor=document.getElementById("mejor").value==="Menor valor";
+  var h="<p>Se analizaron <b>"+g.n+"</b> paros de <b>"+esc(document.getElementById("empresa").value)+"</b>. Media "+fmt(m.media,2)+" "+u+", mediana "+fmt(m.mediana,2)+" "+u+", desviación típica "+fmt(m.sd,2)+" "+u+" (CV "+fmt(m.cv,1)+" %). Es una muestra: para afirmar algo de toda la operación se necesitan más datos.</p>";
+  /* AGREGADO (reto I3): advertencia media vs mediana */
+  var dif=Math.abs(m.media-m.mediana)/m.media*100;
+  if(dif>10)h+='<div class="warn">Atención: la mediana difiere de la media en '+fmt(dif,1)+' % (más del 10 %). El promedio no representa bien al proceso. Hay '+(m.media>m.mediana?"unos pocos paros muy largos":"valores extremos")+' que conviene revisar'+(at.val.length?': '+at.val.join(", ")+' '+u:'')+'.</div>';
+  else h+="<p>La media y la mediana son parecidas (diferencia de "+fmt(dif,1)+" %): el promedio representa bien al proceso.</p>";
+  return h;
+}
+
+
+/* ===== AGREGADO (Prompt 5 y 6): gráficos adicionales, descarga, diagnóstico, alternativas y simulador ===== */
+function tit(t,W){return '<text x="'+(W/2)+'" y="16" text-anchor="middle" class="tt">'+t+'</text>'}
+function ylab(t,H){return '<text transform="rotate(-90)" x="'+(-H/2)+'" y="13" text-anchor="middle">'+t+'</text>'}
+function descargar(id,nombre){
+  var svg=document.querySelector("#"+id+" svg");if(!svg)return;
+  var vb=svg.viewBox.baseVal,W=vb.width,H=vb.height,NS="http://www.w3.org/2000/svg",cl=svg.cloneNode(true);
+  cl.setAttribute("xmlns",NS);cl.setAttribute("width",W*2);cl.setAttribute("height",H*2);
+  var st=document.createElementNS(NS,"style");st.textContent="text{fill:#14212e;font:11px Arial,sans-serif}.tt{font-weight:700;font-size:13px}";
+  var bg=document.createElementNS(NS,"rect");bg.setAttribute("width",W);bg.setAttribute("height",H);bg.setAttribute("fill","#ffffff");
+  cl.insertBefore(bg,cl.firstChild);cl.insertBefore(st,cl.firstChild);
+  var img=new Image();
+  img.onload=function(){var cv=document.createElement("canvas");cv.width=W*2;cv.height=H*2;cv.getContext("2d").drawImage(img,0,0);
+    cv.toBlob(function(b){var l=document.createElement("a");l.href=URL.createObjectURL(b);l.download=nombre+".png";l.click()})};
+  img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(new XMLSerializer().serializeToString(cl));
+}
+function svgTorta(a,lim,meta){
+  var W=640,H=280,n=a.length,u=document.getElementById("unidad").value;
+  if(isNaN(lim)||isNaN(meta))return '<svg viewBox="0 0 '+W+' 60"><text x="10" y="30">Escribe el límite y la meta para ver este gráfico.</text></svg>';
+  var c1=a.filter(function(x){return x<=meta}).length,c3=a.filter(function(x){return x>lim}).length,c2=n-c1-c3;
+  var d=[["Dentro de la meta (≤ "+meta+" "+u+")",c1,"#1b7a3d"],["Entre la meta y el límite",c2,"#e8a317"],["Fuera del límite (> "+lim+" "+u+")",c3,"#b3261e"]];
+  var cx=170,cy=155,R=100,r=58,ang=-Math.PI/2,s='<svg viewBox="0 0 '+W+' '+H+'">';
+  d.forEach(function(x){
+    if(!x[1])return;var f=x[1]/n;
+    if(f>0.9999){s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+((R+r)/2)+'" fill="none" stroke="'+x[2]+'" stroke-width="'+(R-r)+'"/>';return}
+    var a1=ang+f*2*Math.PI,lg=f>.5?1:0;
+    function P(rr,t){return (cx+rr*Math.cos(t)).toFixed(1)+","+(cy+rr*Math.sin(t)).toFixed(1)}
+    s+='<path d="M'+P(R,ang)+" A"+R+","+R+" 0 "+lg+" 1 "+P(R,a1)+" L"+P(r,a1)+" A"+r+","+r+" 0 "+lg+" 0 "+P(r,ang)+' Z" fill="'+x[2]+'" stroke="#fff"><title>'+x[0]+': '+x[1]+' paros</title></path>';
+    ang=a1});
+  s+='<text x="'+cx+'" y="'+(cy-2)+'" text-anchor="middle" style="font-size:18px;font-weight:700">'+n+'</text><text x="'+cx+'" y="'+(cy+14)+'" text-anchor="middle">paros</text>';
+  d.forEach(function(x,i){var y=100+i*48;
+    s+='<rect x="340" y="'+(y-11)+'" width="16" height="16" fill="'+x[2]+'"/><text x="364" y="'+y+'">'+x[0]+'</text><text x="364" y="'+(y+16)+'" style="font-weight:700">'+x[1]+' paros ('+fmt(x[1]/n*100,1)+' %)</text>'});
+  return s+tit("Cumplimiento de la meta y del límite",W)+'</svg>';
+}
+function svgCaja(a,lim,meta,at,m){
+  var W=640,H=190,L=20,mx=Math.max.apply(null,a.concat(isNaN(lim)?[0]:[lim]))*1.05,u=document.getElementById("unidad").value;
+  function X(v){return L+(W-L-20)*v/mx}
+  var ok=a.filter(function(x){return x>=at.lo&&x<=at.hi}),wl=Math.min.apply(null,ok),wh=Math.max.apply(null,ok),y=85,hh=44;
+  var s='<svg viewBox="0 0 '+W+' '+H+'">';
+  for(var t=0;t<=5;t++){var v=mx*t/5;s+='<line x1="'+X(v)+'" x2="'+X(v)+'" y1="35" y2="150" stroke="#8884"/><text x="'+X(v)+'" y="164" text-anchor="middle">'+Math.round(v)+'</text>'}
+  if(!isNaN(lim))s+='<line x1="'+X(lim)+'" x2="'+X(lim)+'" y1="35" y2="150" stroke="#b3261e" stroke-dasharray="6 4" stroke-width="2"/><text x="'+X(lim)+'" y="32" text-anchor="middle" style="fill:#b3261e">Límite '+lim+'</text>';
+  if(!isNaN(meta))s+='<line x1="'+X(meta)+'" x2="'+X(meta)+'" y1="35" y2="150" stroke="#1b7a3d" stroke-dasharray="6 4" stroke-width="2"/><text x="'+X(meta)+'" y="32" text-anchor="middle" style="fill:#1b7a3d">Meta '+meta+'</text>';
+  s+='<line x1="'+X(wl)+'" x2="'+X(at.q1)+'" y1="'+y+'" y2="'+y+'" stroke="#0b2a4a" stroke-width="2"/><line x1="'+X(at.q3)+'" x2="'+X(wh)+'" y1="'+y+'" y2="'+y+'" stroke="#0b2a4a" stroke-width="2"/>';
+  s+='<line x1="'+X(wl)+'" x2="'+X(wl)+'" y1="'+(y-10)+'" y2="'+(y+10)+'" stroke="#0b2a4a" stroke-width="2"/><line x1="'+X(wh)+'" x2="'+X(wh)+'" y1="'+(y-10)+'" y2="'+(y+10)+'" stroke="#0b2a4a" stroke-width="2"/>';
+  s+='<rect x="'+X(at.q1)+'" y="'+(y-hh/2)+'" width="'+(X(at.q3)-X(at.q1))+'" height="'+hh+'" fill="#e8a317" stroke="#0b2a4a" stroke-width="2"/><line x1="'+X(m.mediana)+'" x2="'+X(m.mediana)+'" y1="'+(y-hh/2)+'" y2="'+(y+hh/2)+'" stroke="#0b2a4a" stroke-width="3"/>';
+  s+='<text x="'+X(m.mediana)+'" y="'+(y+hh/2+14)+'" text-anchor="middle" style="font-weight:700">Mediana '+fmt(m.mediana,1)+'</text>';
+  at.val.forEach(function(v){s+='<circle cx="'+X(v)+'" cy="'+y+'" r="5" fill="#b3261e"/><text x="'+X(v)+'" y="'+(y-12)+'" text-anchor="middle" style="fill:#b3261e">'+v+'</text>'});
+  return s+'<text x="'+(W/2)+'" y="'+(H-6)+'" text-anchor="middle">Duración del paro ('+u+')</text>'+tit("Diagrama de caja de la duración de los paros",W)+'</svg>';
+}
+var DATOS=[];
+function cnt(a,f){return a.filter(f).length}
+function diagnostico(a,g,m,at){
+  var u=document.getElementById("unidad").value,lim=num("limite"),meta=num("meta"),n=a.length;
+  var fuera=cnt(a,function(x){return x>lim}),cumple=cnt(a,function(x){return x<=meta}),ex=a.reduce(function(t,x){return t+Math.max(0,x-lim)},0);
+  var F=[],D=[];
+  if(1-fuera/n>=.5)F.push("<b>"+fmt((1-fuera/n)*100,1)+" %</b> de los paros ("+(n-fuera)+" de "+n+") cumple el límite de "+lim+" "+u+".");
+  if(m.mediana<=meta*1.1)F.push("La mediana es <b>"+fmt(m.mediana,1)+" "+u+"</b>, "+(m.mediana<=meta?"dentro de":"a solo "+fmt(m.mediana-meta,1)+" "+u+" de")+" la meta de "+meta+": el paro típico es manejable.");
+  if(cumple/n>=.3)F.push("<b>"+fmt(cumple/n*100,1)+" %</b> de los paros ("+cumple+" de "+n+") ya alcanza la meta de "+meta+" "+u+".");
+  if(at.q1<=meta)F.push("El 25 % de los paros más cortos dura <b>"+fmt(at.q1,0)+" "+u+" o menos</b> (mínimo "+g.mn+"): la empresa ya demuestra que puede resolver rápido.");
+  F.push("La mitad central de los paros (entre Q1 y Q3) está entre <b>"+fmt(at.q1,0)+" y "+fmt(at.q3,0)+" "+u+"</b>.");
+  if(fuera>0)D.push("<b>"+fuera+" de "+n+" paros ("+fmt(fuera/n*100,1)+" %)</b> superan el límite de "+lim+" "+u+"; suman <b>"+fmt(ex,0)+" "+u+"</b> excedidos.");
+  if(m.cv>20)D.push("Variación muy alta: CV de <b>"+fmt(m.cv,1)+" %</b> (desviación típica "+fmt(m.sd,1)+" "+u+"). Los paros son muy desiguales.");
+  if(at.val.length)D.push("Paro extremo de <b>"+Math.max.apply(null,at.val)+" "+u+"</b>, "+fmt(Math.max.apply(null,at.val)/lim,1)+" veces el límite. Jala el promedio hacia arriba.");
+  if(m.media>meta)D.push("La media ("+fmt(m.media,1)+" "+u+") supera la meta por <b>"+fmt(m.media-meta,1)+" "+u+"</b>.");
+  D.push("El rango es de <b>"+g.R+" "+u+"</b> (de "+g.mn+" a "+g.mx+"): hay mucha distancia entre el mejor y el peor paro.");
+  function ul(x){return "<ul>"+x.slice(0,3).map(function(t){return "<li>"+t+"</li>"}).join("")+"</ul>"}
+  return '<div class="f"><h4>3 fortalezas</h4>'+ul(F)+'</div><div class="d"><h4>3 debilidades</h4>'+ul(D)+'</div>';
+}
+function alternativas(a,g,m,at){
+  var u=document.getElementById("unidad").value,lim=num("limite"),meta=num("meta"),n=a.length;
+  var fuera=cnt(a,function(x){return x>lim}),cumple=cnt(a,function(x){return x<=meta});
+  var ex=a.reduce(function(t,x){return t+Math.max(0,x-lim)},0),mCap=media(a.map(function(x){return Math.min(x,lim)}));
+  var sin=a.filter(function(x){return x>=at.lo&&x<=at.hi}),b=a.map(function(x){return x*0.9}),c10=cnt(b,function(x){return x<=meta});
+  var top=a.slice().sort(function(x,y){return y-x}).slice(0,3).join(", ");
+  var R=[];
+  R.push(["Plan de respuesta rápida para paros prolongados: stock mínimo de repuestos críticos (sellos, rodamientos), permisos de trabajo preaprobados y cuadrilla de guardia.",
+    fuera+" de "+n+" paros ("+fmt(fuera/n*100,1)+" %) pasan de "+lim+" "+u+"; suman "+fmt(ex,0)+" "+u+" excedidos.","Medio (inventario y guardias; cotizar)",
+    "Si ningún paro pasara de "+lim+", la media bajaría de "+fmt(m.media,1)+" a "+fmt(mCap,1)+" "+u+" (−"+fmt(m.media-mCap,1)+").","Alta"]);
+  R.push(["Análisis de causa raíz de los paros más largos: reconstruir cada caso (falla, repuesto, permiso, personal, turno) y corregir el cuello de botella.",
+    at.val.length?"Atípico(s): "+at.val.join(", ")+" "+u+". Media "+fmt(m.media,1)+" vs mediana "+fmt(m.mediana,1)+".":"Los tres paros más largos: "+top+" "+u+".","Bajo (horas de ingeniería)",
+    at.val.length&&sin.length>2?"Sin los atípicos, la media sería "+fmt(media(sin),1)+" y la desviación "+fmt(desvTipica(sin),1)+" "+u+" (hoy "+fmt(m.sd,1)+").":"Reducir los casos extremos baja la variación.","Alta"]);
+  R.push(["Estandarizar el diagnóstico y la reparación con listas de chequeo por tipo de falla y capacitación de la cuadrilla.",
+    "CV de "+fmt(m.cv,1)+" % y mediana de "+fmt(m.mediana,1)+" "+u+" frente a la meta de "+meta+".","Bajo a medio (formatos y capacitación)",
+    "Si todos los paros bajaran 10 %, la media sería "+fmt(m.media*0.9,1)+" "+u+" y cumplirían la meta "+c10+" de "+n+" ("+fmt(c10/n*100,1)+" %; hoy "+cumple+").","Media"]);
+  R.push(["Registrar la causa, el equipo y el turno de cada paro para construir un Pareto y atacar primero lo que más tiempo quita.",
+    "Hoy la muestra solo tiene la duración; no se sabe qué causas explican los paros largos.","Bajo (formato de registro)",
+    "Permite priorizar las pocas causas que concentran el tiempo perdido (hipótesis a confirmar con los datos).","Alta"]);
+  R.push(["Seguimiento con una nueva muestra de 45 paros y una carta de control para confirmar si las mejoras funcionaron.",
+    "Línea base: "+fmt(fuera/n*100,1)+" % fuera del límite, desviación "+fmt(m.sd,1)+" "+u+", mediana "+fmt(m.mediana,1)+" "+u+".","Bajo (tiempo del analista)",
+    "Comparar antes y después: objetivo sugerido de bajar el % fuera del límite y la desviación típica.","Media"]);
+  var h='<table class="alt"><tr><th>#</th><th>Qué hacer</th><th>Dato que lo respalda</th><th>Costo estimado</th><th>Impacto esperado</th><th>Prioridad</th></tr>';
+  R.forEach(function(r,i){h+="<tr><td>"+(i+1)+"</td><td>"+r[0]+"</td><td>"+r[1]+"</td><td>"+r[2]+"</td><td>"+r[3]+'</td><td><span class="pill '+r[4]+'">'+r[4]+"</span></td></tr>"});
+  return h+"</table>";
+}
+function simular(){
+  var a=DATOS;if(!a.length)return;
+  var u=document.getElementById("unidad").value,lim=num("limite"),meta=num("meta"),costo=num("costo"),n=a.length;
+  var p1=+document.getElementById("s1").value,p2=+document.getElementById("s2").value;
+  document.getElementById("v1").textContent=p1+" %";document.getElementById("v2").textContent=p2+" %";
+  var b=a.map(function(x){return (x>lim?x*(1-p1/100):x)*(1-p2/100)});
+  function M(z){return {me:media(z),md:mediana(z),sd:desvTipica(z),fu:cnt(z,function(x){return x>lim}),ct:cnt(z,function(x){return x<=meta}),ex:z.reduce(function(t,x){return t+Math.max(0,x-lim)},0)}}
+  var A=M(a),B=M(b),ahorro=(a.reduce(function(t,x){return t+x},0)-b.reduce(function(t,x){return t+x},0))/60;
+  function row(t,x,y,d){return "<tr><td>"+t+"</td><td>"+x+"</td><td><b>"+y+"</b></td></tr>"}
+  var h='<table><tr><th>Indicador</th><th>Hoy</th><th>Con el escenario</th></tr>'
+   +row("Media ("+u+")",fmt(A.me,1),fmt(B.me,1))+row("Mediana ("+u+")",fmt(A.md,1),fmt(B.md,1))+row("Desviación típica ("+u+")",fmt(A.sd,1),fmt(B.sd,1))
+   +row("Paros fuera del límite",A.fu+" ("+fmt(A.fu/n*100,1)+" %)",B.fu+" ("+fmt(B.fu/n*100,1)+" %)")
+   +row("Paros que cumplen la meta",A.ct+" ("+fmt(A.ct/n*100,1)+" %)",B.ct+" ("+fmt(B.ct/n*100,1)+" %)")
+   +row("Minutos excedidos del límite",fmt(A.ex,0),fmt(B.ex,0))
+   +'</table><p><b>Tiempo de paro ahorrado en la muestra: '+fmt(ahorro,1)+' horas</b>'+(costo>0?" · valor estimado: "+fmt(ahorro*costo,0)+" (con el costo por hora ingresado)":" · ingresa el costo por hora en «Datos» para ver el valor en dinero")+".</p>";
+  document.getElementById("sim").innerHTML=h;
+}
+function recomendar(a,g,m,at){
+  var lim=num("limite"),meta=num("meta");
+  if(isNaN(lim)||isNaN(meta)){var t="<p>Escribe el límite y la meta en «Datos» para ver este análisis.</p>";["diag","alts","sim"].forEach(function(i){document.getElementById(i).innerHTML=t});return}
+  DATOS=a;
+  document.getElementById("diag").innerHTML=diagnostico(a,g,m,at);
+  document.getElementById("alts").innerHTML=alternativas(a,g,m,at);
+  simular();
+}
+
+
+/* ===== AGREGADO (Prompt 7 y 8): interactividad, informe imprimible y correcciones ===== */
+function esc(t){return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function irTab(t){document.querySelectorAll("nav button,.tab").forEach(function(x){x.classList.remove("on")});
+  document.querySelector('nav button[data-t="'+t+'"]').classList.add("on");document.getElementById("t-"+t).classList.add("on")}
+function renderDatos(a){
+  var u=document.getElementById("unidad").value,lim=num("limite"),ord=document.getElementById("orden").value,idx=a.map(function(_,i){return i});
+  if(ord==="may")idx.sort(function(x,y){return a[y]-a[x]});else if(ord==="men")idx.sort(function(x,y){return a[x]-a[y]});
+  var h='<table><tr><th>#</th><th>Duración ('+esc(u)+')</th><th></th></tr>';
+  idx.forEach(function(i){var mal=!isNaN(lim)&&a[i]>lim;h+='<tr'+(mal?' class="bad"':'')+'><td>'+(i+1)+'</td><td>'+a[i]+'</td><td><button class="x" title="Eliminar este paro" onclick="quitar('+i+')">✕</button></td></tr>'});
+  document.getElementById("tablaDatos").innerHTML=h+"</table>";
+}
+function quitar(i){if(DATOS.length<=5){document.getElementById("msg").textContent="Se necesitan al menos 5 datos; no se puede eliminar más.";return}
+  DATOS.splice(i,1);document.getElementById("datos").value=DATOS.join("\n");analizar()}
+function agregar(){var el=document.getElementById("nuevo"),v=parseFloat(String(el.value).replace(",","."));
+  if(isNaN(v)){document.getElementById("msg").textContent="Escribe un número para agregar el paro.";return}
+  DATOS.push(v);document.getElementById("datos").value=DATOS.join("\n");el.value="";analizar()}
+function deslizar(id,v){document.getElementById(id).value=v;analizar()}
+function sincronizar(a){
+  var mx=Math.ceil(Math.max.apply(null,a)*1.1),lim=num("limite"),meta=num("meta");
+  [["rl","lv",lim],["rm","mv",meta]].forEach(function(x){var r=document.getElementById(x[0]);r.min=0;r.max=mx;if(!isNaN(x[2]))r.value=x[2];
+    document.getElementById(x[1]).textContent=isNaN(x[2])?"sin definir":x[2]+" "+document.getElementById("unidad").value})}
+function detSerie(i){var v=DATOS[i],u=document.getElementById("unidad").value,lim=num("limite"),meta=num("meta"),t="<b>Paro n.º "+(i+1)+": "+v+" "+esc(u)+".</b> ";
+  if(!isNaN(lim)&&v>lim)t+="Supera el límite por "+fmt(v-lim,1)+" "+esc(u)+".";else if(!isNaN(meta)&&v<=meta)t+="Cumple la meta ("+meta+").";else t+="Está dentro del límite pero por encima de la meta.";
+  document.getElementById("detSerie").innerHTML=t}
+function detHisto(i){var g=agrupar(DATOS),c=g.cl[i],u=document.getElementById("unidad").value,l=[];
+  DATOS.forEach(function(x,k){if(Math.min(g.k-1,Math.floor((x-g.mn)/g.A))===i)l.push("n.º "+(k+1)+": "+x)});
+  document.getElementById("detHisto").innerHTML="<b>Clase "+c.li+" a "+c.ls+" "+esc(u)+": "+c.fi+" paros.</b> "+(l.length?l.slice(0,40).join(" · "):"Ninguno.")}
+var vTimer=null;function vivo(){clearTimeout(vTimer);vTimer=setTimeout(analizar,200)}
+function restablecer(){try{localStorage.removeItem("rg_estado2")}catch(e){}location.reload()}
+
+var repOn=false;
+function generarInforme(){
+  var a=DATOS;if(a.length<5)return;repOn=true;
+  var g=agrupar(a),at=atipicos(a),m={media:media(a),mediana:mediana(a),sd:desvTipica(a)};m.cv=m.sd/m.media*100;
+  var u=esc(document.getElementById("unidad").value),lim=num("limite"),meta=num("meta"),n=a.length,mo=moda(a);
+  var emp=esc(document.getElementById("empresa").value),vr=esc(document.getElementById("variable").value),aut=esc(document.getElementById("autor").value.trim()||"(sin definir)");
+  var hoy=new Date().toLocaleDateString("es-CO",{day:"numeric",month:"long",year:"numeric"});
+  var fu=isNaN(lim)?0:cnt(a,function(x){return x>lim}),ct=isNaN(meta)?0:cnt(a,function(x){return x<=meta}),dif=Math.abs(m.media-m.mediana)/m.media*100;
+  var h='<div class="portada"><p>UNIPAZ · Ingeniería de Producción<br>Estadística (840601)</p><h1>'+emp+'</h1><h2>Informe de análisis estadístico</h2><p><b>'+vr+'</b></p><p>Fecha: '+hoy+'<br>Autor: '+aut+'</p></div>';
+  h+='<h3>1. Resumen ejecutivo</h3><p>Se analizó una muestra de <b>'+n+'</b> registros de «'+vr+'» en '+emp+(/\.$/.test(emp)?' ':'. ')+'La duración media es <b>'+fmt(m.media,1)+' '+u+'</b> y la mediana <b>'+fmt(m.mediana,1)+' '+u+'</b>; la desviación típica es '+fmt(m.sd,1)+' '+u+' (coeficiente de variación '+fmt(m.cv,1)+' %, '+(m.cv>20?'alto':m.cv>10?'moderado':'bajo')+').</p>';
+  if(!isNaN(lim))h+='<p><b>'+fu+' de '+n+' paros ('+fmt(fu/n*100,1)+' %)</b> superan el límite de '+lim+' '+u+(isNaN(meta)?'':'; '+ct+' ('+fmt(ct/n*100,1)+' %) cumplen la meta de '+meta+' '+u)+'.</p>';
+  h+='<p>'+(dif>10?'La mediana difiere de la media en '+fmt(dif,1)+' %: el promedio no representa bien al proceso porque unos pocos valores muy altos lo jalan hacia arriba'+(at.val.length?' (atípico(s): '+at.val.join(", ")+' '+u+')':'')+'. Conviene investigar esos casos antes de actuar sobre el promedio.':'La media y la mediana son parecidas (diferencia de '+fmt(dif,1)+' %), por lo que el promedio representa bien al proceso.')+'</p>';
+  h+='<p>Los resultados describen una muestra; afirmar algo sobre toda la operación exige más datos y estadística inferencial.</p>';
+  var T=[["Número de datos (n)",n],["Media",fmt(m.media,3)+" "+u],["Mediana",fmt(m.mediana,3)+" "+u],["Moda",mo.frec<2?"Sin moda":mo.valores.slice(0,3).join(", ")+" "+u],["Desviación típica",fmt(m.sd,3)+" "+u],["Coeficiente de variación",fmt(m.cv,2)+" %"],["Q1 / Q3",fmt(at.q1,1)+" / "+fmt(at.q3,1)+" "+u],["Asimetría",fmt(asimetria(a),3)],["Mínimo / Máximo",g.mn+" / "+g.mx+" "+u],["Media agrupada",fmt(g.mg,1)+" "+u],["Mediana agrupada",fmt(g.medg,1)+" "+u],["Moda agrupada",fmt(g.modg,1)+" "+u]];
+  h+='<h3>2. Tablas de estadísticas</h3><div class="wrap full"><table><tr><th>Medida</th><th>Valor</th></tr>'+T.map(function(r){return "<tr><td>"+r[0]+"</td><td>"+r[1]+"</td></tr>"}).join("")+'</table></div><p></p><div class="wrap full">'+document.getElementById("tabla").innerHTML+'</div><p class="cap">'+esc(document.getElementById("clases").textContent)+'</p>';
+  h+='<h3>3. Gráficos</h3>'+["serie","histo","torta","caja","ojiva"].map(function(id){return '<div class="ch">'+document.getElementById(id).innerHTML+'</div>'}).join("");
+  h+='<h3>4. Diagnóstico</h3><div class="two">'+document.getElementById("diag").innerHTML+'</div>';
+  h+='<h3>5. Alternativas de mejora</h3><div class="wrap full">'+document.getElementById("alts").innerHTML+'</div>';
+  var ap=document.getElementById("aporte").value.trim();
+  h+='<h3>6. Aporte del grupo</h3><div style="white-space:pre-wrap">'+(ap?esc(ap):"(El grupo aún no ha escrito su aporte.)")+'</div>';
+  h+='<h3>7. Uso de inteligencia artificial</h3><div style="white-space:pre-wrap">'+esc(document.getElementById("usoia").value)+'</div>';
+  document.getElementById("rep").innerHTML=h;
+}
+function mostrarInforme(){generarInforme();irTab("inf");window.scrollTo(0,0)}
+function imprimirInforme(){generarInforme();irTab("inf");document.body.classList.add("solo");window.print()}
+window.addEventListener("afterprint",function(){document.body.classList.remove("solo")});
+
+/* ===== Principal ===== */
+var ids=["empresa","variable","unidad","mejor","limite","meta","costo","datos","aporte","autor","usoia"];
+function guardar(){try{var o={};ids.forEach(function(i){o[i]=document.getElementById(i).value});localStorage.setItem("rg_estado2",JSON.stringify(o))}catch(e){}}
+function cargar(){try{var o=JSON.parse(localStorage.getItem("rg_estado2"));if(o)ids.forEach(function(i){if(o[i]!==undefined)document.getElementById(i).value=o[i]})}catch(e){}}
+function ejemplo(){document.getElementById("datos").value=SAMPLE;analizar()}
+function analizar(){
+  var msg=document.getElementById("msg");msg.textContent="";
+  var txt=document.getElementById("datos").value,a=leerDatos(txt);
+  if(a.length<5){msg.textContent="Necesito al menos 5 datos numéricos.";return}
+  DATOS=a;
+  var g=agrupar(a),at=atipicos(a),m={media:media(a),mediana:mediana(a),sd:desvTipica(a)};m.cv=m.sd/m.media*100;
+  var u=document.getElementById("unidad").value;
+  document.getElementById("hEmpresa").textContent=document.getElementById("empresa").value;
+  document.getElementById("hVar").textContent=document.getElementById("variable").value+" ("+u+") · UNIPAZ · Estadística (840601)";
+  document.getElementById("banner").innerHTML=(txt.trim()===SAMPLE.trim())?'<div class="ej">Estás viendo los 40 datos de ejemplo (línea base de la guía). Para volver a tu caso pulsa «Datos del caso 02».</div>':"";
+  renderDatos(a);sincronizar(a);document.getElementById("detSerie").textContent="Haz clic en un punto para ver el detalle de ese paro.";document.getElementById("detHisto").textContent="Haz clic en una barra para ver qué paros caen en esa clase.";
+  document.getElementById("cards").innerHTML=tarjetas(a,g,m,at);
+  var t='<table><tr><th>Clase</th><th>Marca xi</th><th>fi</th><th>fr</th><th>Fi</th><th>Fr %</th></tr>';
+  g.cl.forEach(function(c){t+='<tr><td>'+c.li+' – '+c.ls+'</td><td>'+c.marca+'</td><td>'+c.fi+'</td><td>'+fmt(c.fr,3)+'</td><td>'+c.Fi+'</td><td>'+fmt(c.Fr*100,1)+'</td></tr>'});
+  document.getElementById("tabla").innerHTML=t+"</table>";
+  document.getElementById("clases").textContent="Regla de Sturges: k = "+g.k+" clases, rango = "+g.R+", amplitud A = "+g.A+". Clases [Li, Ls); la última incluye su límite superior.";
+  document.getElementById("serie").innerHTML=svgSerie(a,num("limite"),num("meta"),u);
+  document.getElementById("histo").innerHTML=svgHisto(g,u);
+  document.getElementById("torta").innerHTML=svgTorta(a,num("limite"),num("meta"));
+  document.getElementById("caja").innerHTML=svgCaja(a,num("limite"),num("meta"),at,m);
+  document.getElementById("ojiva").innerHTML=svgOjiva(g);
+  document.getElementById("informe").innerHTML=construirInforme(a,g,m,at);
+  recomendar(a,g,m,at);
+  if(document.getElementById("mejor").value!=="Menor valor")document.getElementById("informe").innerHTML+='<div class="warn">Aviso: el diagnóstico, las alternativas y el simulador están pensados para variables donde un valor menor es mejor (como la duración de un paro). Con «Mayor valor» interprétalos al revés.</div>';
+  if(repOn)generarInforme();
+  guardar();
+}
+document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){irTab(b.dataset.t)})});
+["empresa","variable","unidad","mejor","limite","meta","costo"].forEach(function(id){var el=document.getElementById(id);el.addEventListener("input",vivo);el.addEventListener("change",vivo)});
+document.getElementById("datos").addEventListener("change",analizar);
+document.getElementById("archivo").addEventListener("change",function(e){
+  var f=e.target.files[0];if(!f)return;var r=new FileReader();
+  r.onload=function(){document.getElementById("datos").value=r.result;analizar()};r.readAsText(f);e.target.value="";
+});
+document.getElementById("datos").value=CASO;
+cargar();analizar();
+</script>
+</body>
+</html>
